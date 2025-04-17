@@ -36,6 +36,10 @@ Cylc 8.5
    :cylc-rose: `1.5 <https://github.com/cylc/cylc-rose/blob/master/CHANGES.md>`__
    :rose: `2.4 <https://github.com/metomi/rose/blob/master/CHANGES.md>`__
 
+Max RSS and CPU time in Analysis View
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Max RSS (Memory Usage) and CPU time are now available in the Analysis View.
 
 Cylc Tui
 ^^^^^^^^
