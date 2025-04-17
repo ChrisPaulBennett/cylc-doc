@@ -449,20 +449,20 @@ If you are running cylc on a supported platform, profiling is enabled by default
 You will be able to see the profiling information in the analysis tab in the cylc GUI
 You can configure or disable profiling entirely, by setting the following in
 your workflow configuration:
-.. code-block:: cylc
-   :caption: part of a ``flow.cylc`` config file
 
-   [platforms]
-       [[profile]]
-           # Profiling can be turned off by setting activate = False
-           activate = True
-           # If your cgroups is not mounted at the default location on your platform 
-           # you can set the cgroups path to the location of your cgroups mount point.
-           cgroups path = '/sys/fs/cgroup'
-           # The profiling interval can be set to a different value
-           # if you want to increase or decrease the frequency of profiling.
-           polling interval = 10
-           """
+ .. code-block:: cylc
+    :caption: part of a ``flow.cylc`` config file
+
+    [platforms]
+        [[profile]]
+            # Profiling can be turned off by setting activate = False
+            activate = True
+            # If your cgroups is not mounted at the default location on your platform
+            # you can set the cgroups path to the location of your cgroups mount point.
+            cgroups path = '/sys/fs/cgroup'
+            # The profiling interval can be set to a different value
+            # if you want to increase or decrease the frequency of profiling.
+            polling interval = 10
 
 .. note::
 
