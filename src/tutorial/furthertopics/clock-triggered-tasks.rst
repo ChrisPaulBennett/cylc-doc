@@ -60,7 +60,7 @@ Paste the following code into a ``flow.cylc`` file:
            [[[events]]]
                mail events = failed
        [[bell]]
-           script = printf 'bong%.02d\n' $(seq 1 $(cylc cyclepoint --print-hour))
+           script = printf 'bong%.02d\n' $(seq 1 $(cylc cyclepoint --print-hour)); sleep 5
 
 Change the initial cycle point to 00:00 this morning (e.g. if it was
 the first of January 2000 we would write ``2000-01-01T00Z``).
@@ -77,7 +77,6 @@ Run your workflow using::
 Stop the workflow after a few cycles using ``cylc stop --now --now clock-trigger``.
 Notice how the tasks run as soon as possible rather than
 waiting for the actual time to be equal to the cycle point.
-
 
 Clock-Triggering Tasks
 ----------------------
@@ -172,4 +171,4 @@ Summary
 * Clock triggers are a built in example of :ref:`Section External Triggers`.
 * Clock triggers can only be used in datetime cycling workflows.
 
-For more information see the `Cylc User Guide`_.
+For more information see the :ref:`Cylc User Guide <Built-in Clock Triggers>`.

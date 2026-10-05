@@ -19,26 +19,22 @@ Consolidating Configuration
               script = get-observations
               [[[environment]]]
                   SITE_ID = 3772
-                  API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           [[get_observations_camborne]]
               script = get-observations
               [[[environment]]]
                   SITE_ID = 3808
-                  API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           [[get_observations_shetland]]
               script = get-observations
               [[[environment]]]
                   SITE_ID = 3005
-                  API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           [[get_observations_aldergrove]]
               script = get-observations
               [[[environment]]]
                   SITE_ID = 3917
-                  API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 .. ifnotslides::
 
-   In this code the ``script`` item and the ``API_KEY`` environment variable have
+   In this code the ``script`` item has
    been repeated for each task. This is bad practice as it makes the
    configuration lengthy and harder to maintain.
 
@@ -53,7 +49,6 @@ Consolidating Configuration
       Repetition
 
       * ``script``
-      * ``API_KEY``
 
 .. slide:: Weather Forecasting Workflow
    :level: 2
@@ -144,10 +139,12 @@ The Three Approaches
    could use them to simplify the workflow from the previous tutorial. *Work
    through them in order!*
 
-* :ref:`families <tutorial-cylc-families>`
-* :ref:`jinja2 <tutorial-cylc-jinja2>`
-* :ref:`parameters <tutorial-cylc-parameterization>`
+.. toctree::
+   :maxdepth: 1
 
+   families
+   jinja2
+   parameters
 
 .. _cylc-tutorial-consolidation-conclusion:
 

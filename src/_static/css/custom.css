@@ -19,3 +19,13 @@
 .logo {
   height: 7em !important;
 }
+
+/* Add an icon to external links, excluding those with the "image-reference" class */
+a.external:not(.image-reference)::after {
+  font-size: 0.7em;
+  font-weight: bolder;
+  margin-left: 0.3em;
+  vertical-align: super;
+  opacity: 0.5;
+  content: "↗";
+}

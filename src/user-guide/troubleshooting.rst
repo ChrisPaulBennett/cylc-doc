@@ -295,7 +295,11 @@ Why is my task stuck in the waiting state - |task-waiting|?
 Tasks in the "waiting" state are waiting for something to happen before Cylc
 will submit them.
 
-To find out what is holding the task back from running:
+To find out what is holding the task back from running use ``cylc show``.
+
+Note, at present ``cylc show`` can only display tasks in the current
+:term:`n-window`. However, waiting tasks beyond ``n=0``, by definition,
+have no satisfied prerequisites.
 
 .. tab-set::
 
@@ -342,8 +346,8 @@ It's waiting for upstream tasks to produce their required outputs:
 
    Such tasks will be reported as having unsatisfied dependencies.
 It's waiting for external events:
-   :ref:`Xtriggers <Section External Triggers>` and
-   :ref:`ext-triggers <Old-Style External Triggers>`
+   :ref:`Xtriggers <user_guide.xtriggers>` and
+   :ref:`ext-triggers <user_guide.ext-triggers>`
    can be used to make tasks wait for events
    external to the workflow, such as the progress of task in other workflows
    or the :ref:`real-world time <Built-in Clock Triggers>`.
@@ -475,7 +479,7 @@ E.G. the following error:
 
 Means that ``ssh`` is not installed or not in your ``$PATH``.
 
-See :ref:`non-python-requirements` for details on system requirements.
+See :ref:`installation` for details on system requirements.
 
 
 .. _troubleshooting.remote_init_did_not_complete:
@@ -551,11 +555,22 @@ For more information, see
 ``failed/XCPU``
 ^^^^^^^^^^^^^^^
 
-``XCPU`` is the signal that most batch systems will use when a job hits its
-execution time limit.
+:data:`XCPU <signal.SIGXCPU>` is the signal that most batch systems will use
+when a job hits its execution time limit.
 
 Use :cylc:conf:`flow.cylc[runtime][<namespace>]execution time limit` to
 increase this limit.
+
+
+``failed/TERM``
+^^^^^^^^^^^^^^^
+
+:data:`TERM <signal.SIGTERM>` is the signal that indicates a process was
+killed.
+
+The job may have been killed on request (i.e, via ``cylc kill``, the
+``job-activity.log`` file will record this), or due to an external factor#
+(e.g, ``kill <pid>``).
 
 
 ``Cannot determine whether workflow is running on <host>``
@@ -577,6 +592,27 @@ determine whether the workflow is running. Likely cause:
 It's possible that this check might not work correctly in some containerised
 environments. If you encounter this issue in combination with containers,
 please let us know.
+
+
+``ERR_JOB_FILES_REMOVED``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This error may appear in the workflow log, it will also be visible in the
+GUI and Cylc Review. It indicates that the job log files were deleted before
+Cylc had determined that the task had finished.
+
+The most likely cause of this is another task in the workflow has purposefully
+deleted these files. Workflows often have so-called "housekeep" tasks which
+delete job log files that are past a certain date in order to free up
+disk space.
+
+The :ref:`rose_prune <builtin.rose_prune>` application is often used to do
+this. The ``job.out`` files of ``rose_prune`` tasks will list any files
+deleted.
+
+To fix the problem, add dependencies into the workflow to ensure the housekeep
+task waits for tasks in earlier cycles to finish before attempting to delete
+their files.
 
 
 Debugging Workflow Configurations

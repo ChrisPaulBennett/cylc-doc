@@ -287,6 +287,7 @@ Datetime operations in task scripts:
          # equivalent to:
          isodatetime "$CYLC_TASK_CYCLE_POINT"
 
+
 Rose Stem
 ---------
 
@@ -331,7 +332,6 @@ Set task outputs:
 
          cylc set --out=succeeded
 
-
 Insert a task:
 
 .. list-table::
@@ -343,3 +343,19 @@ Insert a task:
 
          cylc insert
      - Tasks are inserted automatically when you "trigger" or "set" them.
+
+Re-run a group of tasks in order:
+
+.. list-table::
+   :class: grid-table
+
+   * - **Cylc 7**
+     - **Cylc 8**
+   * - ::
+
+         # reset the task to waiting, they will then re-run in order
+         cylc reset -s=waiting cycle1/task1 cycle2/task2 ...
+     - ::
+
+         # trigger the tasks in a single command, they will re-run in order
+         cylc trigger cycle1/task1 cycle2/task2 ...

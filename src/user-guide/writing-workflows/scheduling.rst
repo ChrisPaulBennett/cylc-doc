@@ -27,12 +27,31 @@ string>` which use a special syntax to define the dependencies between tasks:
 * logical operators ``&`` (AND) and ``|`` (OR) can be used to write
   :term:`conditional dependencies <conditional dependency>`.
 
+The left side of a dependency arrow shows a logical combination of one or more task
+outputs. The right side shows which tasks to trigger when those outputs are complete:
+
 For example:
 
 .. code-block:: cylc-graph
 
-   # baz will not be run until both foo and bar have succeeded
+   # if foo AND bar succeed, run baz
+   foo:succeeded & bar:succeeded => baz
+
+However, ``:succeeded`` is so often required that it is automatically added to plain
+task names on the left side of dependencies, as a convenience:
+
+.. code-block:: cylc-graph
+
+   # short for "foo:succeeded & bar:succeeded => baz"
    foo & bar => baz
+
+
+.. seealso::
+
+   Task outputs in dependency expressions also determine whether the outputs are
+   "required" (by default) or "optional" (with a '?' appended) - see
+   :ref:`required and optional outputs`.
+
 
 Graph strings are configured under the :cylc:conf:`[scheduling][graph]` section
 of the :cylc:conf:`flow.cylc` file:
@@ -308,9 +327,7 @@ The time is assumed to be in UTC unless you set
 
    At Cylc 7 the time zone was assumed to be local time unless
    :cylc:conf:`[scheduler]cycle point time zone` or :cylc:conf:`[scheduler]UTC mode`
-   was set. If your workflow is running in
-   :ref:`Cylc 7 compatibility mode <cylc_7_compat_mode>`
-   this remains the case.
+   was set.
 
 The calendar is assumed to be the proleptic Gregorian calendar unless
 you set :cylc:conf:`[scheduling]cycling mode`.
@@ -589,14 +606,14 @@ point will be done from midnight of the current day.
    :widths: auto
 
    Syntax, Description, Interpretation
-   ``next(-00)``,                     Any century; next year 00,                  2100-01-01
-   ``previous(--01)``,                Any year; next month 01,                    2018-01-01
-   ``next(---01)``,                   Any year; any month; next 1st of month,     2018-04-01
-   ``previous(--1225)``,              Any year; previous Dec 25,                  2017-12-25
-   ``next(-2006)``,                   Any century; next June in a year ending 20, 2020-06-01
-   ``previous(-W101)``,               Any century; previous week 10 day 1,        2018-03-05
-   ``next(-W-1; -W-3; -W-5)``,        "Any year; any week; next day 1, 3 or 5",   2018-03-14
-   ``next(-001; -091; -181; -271)``,  "Any year; day 1, 91, 181 or 271",          2018-04-01
+   ``next(-00)``,                     Any century; next year ending 00,           2100-01-01T00:00Z
+   ``previous(--01)``,                Any year; previous month 01,                2018-01-01T00:00Z
+   ``next(---01)``,                   Any year; any month; next 1st of month,     2018-04-01T00:00Z
+   ``previous(--1225)``,              Any year; previous Dec 25,                  2017-12-25T00:00Z
+   ``next(-2006)``,                   Any century; next June in a year ending 20, 2020-06-01T00:00Z
+   ``previous(-W101)``,               Any century; previous week 10 day 1,        2018-03-05T00:00Z
+   ``next(-W-1; -W-3; -W-5)``,        "Any year; any week; next day 1, 3 or 5",   2018-03-16T00:00Z
+   ``next(-001; -091; -181; -271)``,  "Any year; day 1, 91, 181 or 271",          2018-04-01T00:00Z
    ``previous(-365T12Z)``,            Any year; previous day 356 at 12Z,          2017-12-31T12:00Z
 
 
@@ -604,10 +621,10 @@ The Environment Variable CYLC\_WORKFLOW\_INITIAL\_CYCLE\_POINT
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 At start up the initial cycle point is passed to job environments
-as ``$CYLC_WORKFLOW_INITIAL_CYCLE_POINT`` and stored in the workflow
+as :envvar:`CYLC_WORKFLOW_INITIAL_CYCLE_POINT` and stored in the workflow
 database to persist across restarts.
 
-The ``$CYLC_WORKFLOW_INITIAL_CYCLE_POINT`` variable allows tasks to
+The :envvar:`CYLC_WORKFLOW_INITIAL_CYCLE_POINT` variable allows tasks to
 check if they are running in the initial cycle point, when different behaviour
 may be required. Note however that an initial ``R1`` graph section is the
 preferred way to get different behaviour at workflow start-up.
@@ -1287,7 +1304,7 @@ number of members of ``FAM1`` and ``M`` is the number of members of ``FAM2``.
 This can result in high memory use as the number of family members grows.
 
 You can greatly reduce the number of dependencies generated here by putting
-:term:`dummy tasks<dummy task>` in the graph to represent the state of the 
+:term:`dummy tasks<dummy task>` in the graph to represent the state of the
 upstream family. For example, if ``FAM2`` should trigger off any member of
 ``FAM1`` succeeding you can use a :term:`dummy tasks<dummy task>`
 ``FAM1_done`` like this:
@@ -1534,7 +1551,7 @@ So, in the cycle ``2000-01-01T00:00Z``:
 * ``foo`` would expire at ``2000-01-01T00:00Z``.
 * ``bar`` would expire at ``2000-01-01T01:00Z``.
 
-Only waiting tasks can expire, :term:`active tasks <active>` will not be
+Only waiting tasks can expire, :term:`active tasks <active task>` will not be
 killed if they pass their configured ``clock-expire`` time.
 
 When a task expires, it produces the ``expired`` :term:`output`.
@@ -1574,13 +1591,12 @@ Family triggers are also provided for task expiry:
 .. warning::
 
    The scheduler can only determine that a task has expired once it
-   enters the :term:`n=0 window <n-window>`.
+   enters the :term:`n=0 window <n-window>` - i.e., after its first
+   prerequisite gets satisfied.
 
-   This means that at least one of a task's prerequisites must be satisfied
-   before the task may expire.
-
-   So in the following example, the task ``b`` will only expire, **after**
-   the task ``a`` has succeeded:
+   In the following example, task ``b`` will only expire **after**
+   ``a`` has succeeded, even though the expiry date is several
+   decades ago.
 
    .. code-block:: cylc
 
@@ -1606,163 +1622,252 @@ This is a substantial topic, documented separately
 in :ref:`Section External Triggers`.
 
 
-
 .. _User Guide Required Outputs:
 .. _required outputs:
+.. _User Guide Optional Outputs:
+.. _optional outputs:
+.. _required and optional outputs:
 
-Required Outputs
-----------------
+Required and Optional Outputs
+-----------------------------
 
 .. versionadded:: 8.0.0
 
-:term:`Task outputs <task output>` in the :term:`graph` can be
-:term:`required <required output>` (the default) or
-:term:`optional <optional output>` (marked with ``?`` in the graph).
-
-Tasks are expected to complete required outputs at runtime, but
-they don't have to complete optional outputs.
-
-This allows the scheduler to correctly diagnose
-:term:`workflow completion`. [2]_
-
-Tasks that achieve a :term:`final status` without completing their
-outputs [3]_ are retained in the :term:`n=0 window <n-window>` pending user
-intervention, e.g. to be retriggered after a bug fix.
-
-.. note::
-   Tasks that achieve a final status without completing their outputs will
-   raise a warning and stall the workflow when there is nothing else for
-   the scheduler to run (see :ref:`workflow completion`). They also count
-   toward the :term:`runahead limit`.
-
-This graph says task ``bar`` should trigger if ``foo`` succeeds:
-
-.. code-block:: cylc-graph
-
-   foo => bar  # short for "foo:succeed => bar"
-
-Additionally, ``foo`` is required to succeed, because its success is not marked
-as optional. If ``foo`` achieves a :term:`final status` without succeeding the
-scheduler will not run ``bar``, and ``foo`` will be retained
-in :term:`n=0 <n-window>` pending user intervention.
+:term:`Task outputs <task output>` are :term:`required <required output>`
+by default; but they can be made :term:`optional <optional output>` by
+appending a "?" character.
 
 Here, ``foo:succeed``, ``bar:x``, and ``baz:fail`` are all required outputs:
 
 .. code-block:: cylc-graph
 
-   foo
+   foo:succeeded  # or "foo" for short, when referring to outputs
    bar:x
    baz:fail
 
-Tasks that appear with only custom outputs in the graph are also required to succeed.
-Here, ``foo:succeed`` is a required output, as well as ``foo:x``, unless it is
-marked as optional elsewhere in the graph:
+And here, they are all optional outputs:
 
 .. code-block:: cylc-graph
 
-   foo:x => bar
-
-If a task generates multiple custom outputs, they should be "required" if you
-expect them all to be completed every time the task runs. Here,
-``model:file1``, ``model:file2``, and ``model:file3`` are all required outputs:
-
-.. code-block:: cylc-graph
-
-   model:file1 => proc1
-   model:file2 => proc2
-   model:file3 => proc3
-
-
-.. _optional outputs:
-.. _User Guide Optional Outputs:
-
-Optional Outputs
-----------------
-
-.. versionadded:: 8.0.0
-
-Optional outputs are marked with ``?``. They may or may not be completed by the
-task at runtime.
-
-Like the first example above, the following graph says task ``bar`` should
-trigger if ``foo`` succeeds:
-
-.. code-block:: cylc-graph
-
-   foo? => bar  # short for "foo:succeed? => bar"
-
-But now ``foo:succeed`` is optional so we might expect it to fail sometimes.
-And if it does fail, it will not be retained in the
-:term:`n=0 window <n-window>` as incomplete.
-
-Here, ``foo:succeed``, ``bar:x``, and ``baz:fail`` are all optional outputs:
-
-.. code-block:: cylc-graph
-
-   foo?
+   foo:succeeded?  # or "foo?" for short
    bar:x?
    baz:fail?
 
 
-Success and failure (of the same task) are mutually exclusive, so they must
-both be optional if one is optional, or if they both appear in the graph:
+Optional outputs do not have to be completed by tasks at runtime. They are
+primarily used for :ref:`Graph Branching`.
+
+Required outputs are expected to be completed at run time, which allows the
+scheduler to correctly diagnose :ref:`Workflow Completion`. [2]_
+Tasks that fail to complete required outputs [3]_
+are retained in the :term:`n=0 window <n-window>` pending user intervention,
+which will stall the workflow if there is nothing else to run.
+
+.. note::
+
+   To allow the workflow to continue normally, incomplete outputs can be
+   completed manually with ``cylc set``, or naturally by triggering the
+   tasks to rerun after fixing the underlying problem.
+
+   Incomplete tasks can also be removed with ``cylc remove``, which tells
+   the scheduler it no longer needs to run them - and, by implication,
+   anything downstream of them in the graph.
+
+
+Interpreting Outputs in Dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Dependencies like ``foo:x => bar`` show which *tasks* (on the right) to trigger
+off of which *task outputs* (on the left), and whether those outputs are
+required or optional:
 
 .. code-block:: cylc-graph
 
-   foo? => bar
-   foo:fail? => baz
+   # trigger bar off of foo:x, AND foo:x is required:
+   foo:x => bar
 
+   # trigger bar off of foo:y, AND foo:y is optional:
+   foo:y? => bar
 
-.. warning::
-
-   Optional outputs must be marked as optional everywhere they appear in the
-   graph, to avoid ambiguity.
-
-
-If a task generates multiple custom outputs, they should all be declared optional
-if you do not expect them to be completed every time the task runs:
+The left side shows *task outputs*, not tasks, but for convenience Cylc infers
+the ``:succeeded`` output for plain task names on the left:
 
 .. code-block:: cylc-graph
 
-   # model:x, :y, and :z are all optional outputs:
-   model:x? => proc-x
-   model:y? => proc-y
-   model:z? => proc-z
+   # This implies that foo:succeeded is required:
+   foo => ...  # short for foo:succeeded => ...
 
-This is an example of :term:`graph branching` from optional outputs. Whether a
-particular branch is taken or not depends on which optional outputs are
-completed at runtime. For more information see :ref:`Graph Branching`.
+   # This implies that foo:succeeded is optional:
+   foo? => ...  # short for foo:succeeded? => ...
 
-Leaf tasks (with nothing downstream of them) can have optional outputs. In the
-following graph, ``foo`` is required to succeed, but it doesn't matter whether
-``bar`` succeeds or fails:
+The right side shows *tasks* to trigger, not outputs, so Cylc does *not* infer
+the ``:succeeded`` output for plain task names on the right. (However, see
+:ref:`Explicit Outputs on the Right`):
 
 .. code-block:: cylc-graph
 
-   foo => bar?
+   # This DOES NOT imply that bar:succeeded is required:
+   ... => bar
+
+
+Outputs must be used consistently throughout the graph. The following graph fails
+validation because ``foo:x`` can't be both required and optional:
+
+.. code-block:: cylc-graph
+
+   # ERROR: foo:x can't be both required and optional:
+   foo:x => bar
+   foo:x? => baz
 
 
 .. note::
 
-   Optional outputs do not affect *triggering*. They just tell the scheduler
-   what to do with the task if it reaches a :term:`final status` without
-   completing the output.
-
-   This graph triggers ``bar`` if ``foo`` succeeds, and does not trigger
-   ``bar`` if ``foo`` fails:
+   Required outputs on the left make the dependency "required" too:
 
    .. code-block:: cylc-graph
 
-      foo => bar
+      # we expect foo:x to be completed, and thus bar to trigger:
+      # (if not, foo will be retained in n=0 pending intervention)
+      foo:x => bar
 
-   And so does this graph:
+
+   And optional outputs on the left make the dependency "optional":
 
    .. code-block:: cylc-graph
 
-      foo? => bar
+      # foo:x may be completed or not, and thus bar may trigger or not:
+      # (either way is OK)
+      foo:x? => bar
 
-   The only difference is whether or not the scheduler regards ``foo`` as
-   incomplete if it fails.
+
+Success and Failure Outputs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``:succeeded`` and ``:failed`` outputs have several special properties.
+
+Firstly, success is required *by default* if not declared as required or optional
+anywhere in the graph:
+
+.. code-block:: cylc-graph
+
+   # This does not imply bar:succeeded is required, but it is required by default:
+   ... => bar
+
+   # foo:x is required, and foo:succeeded is also required by default:
+   foo:x => ...
+
+
+Secondly, success and failure of a task are mutually exclusive opposites so
+either one or the other can be required or they must both be optional:
+
+.. code-block:: cylc-graph
+
+   # OK: foo:succeeded is required, foo:failed not used:
+   foo => bar
+
+   # OK: foo:succeeded and foo:failed are both optional:
+   foo? => bar
+   foo:fail? => baz
+
+   # ERROR: foo:succeeded and foo:fail can't both be required:
+   foo => bar
+   foo:fail => baz
+
+   # ERROR: foo:fail can't be optional if foo:succeeded is required:
+   foo => bar
+   foo:fail? => baz
+
+
+Custom Outputs
+^^^^^^^^^^^^^^
+
+If a task generates custom outputs, those you expect to be completed every
+time it runs should be required; and those that you do not expect to be
+completed every time should be optional.
+
+Suppose task ``model`` generates three output files every time it runs.
+We can use three required outputs to trigger tasks to process each file:
+
+.. code-block:: cylc-graph
+
+   model:file1 => process-1 => ...  # we expect all three branches to run
+   model:file2 => process-2 => ...
+   model:file3 => process-3 => ...
+
+
+Now suppose ``model`` *sometimes* generates files "x" or "y" as well, depending
+on runtime events. We can use optional outputs to trigger processing tasks for them:
+
+.. code-block:: cylc-graph
+
+   model:x? => proc-x => products-x  # this branch only runs if :x gets completed
+   model:y? => proc-y => products-y  # this branch only runs if :y gets completed
+
+
+This is an example of :ref:`Graph Branching` from optional outputs.
+
+
+.. _explicit outputs on the right:
+
+Explicit Outputs on the Right
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The right side of a dependency shows *tasks* to trigger, not outputs, so
+we don't infer ``:succeeded`` for plain task names on the right.
+
+However, *explicit* outputs can be used on right sides if you like.
+They must be consistent without all other mentions of the same output
+throughout the graph.
+
+.. code-block:: cylc-graph
+
+   # trigger bar; AND bar:succeeded is required:
+   <outputs> => bar:succeeded
+
+   # trigger bar; AND bar:succeeded is optional
+   <outputs> => bar:succeeded?
+
+   # trigger bar; AND bar:succeeded is optional
+   <outputs> => bar?
+
+
+.. note::
+
+   Outputs on the right make dependencies harder to interpret because the
+   syntax suggests triggering an output rather than a task, which doesn't
+   make sense.
+
+   If you see this, keep in mind that the syntax primarily shows what tasks
+   to trigger, and right side outputs, if present, are just a separate
+   declaration of output optionality.
+
+
+It is never necessary to put outputs on the right of a dependency. The same
+output will be declared elsewhere on the left if anything triggers off of it;
+and if not, you can declare it with a lone node (no dependency arrow).
+
+For example you don't need ``:y?`` on the right here:
+
+.. code-block:: cylc-graph
+
+   foo:x => bar:y?
+
+If ``bar:y?`` appears on the left elsewhere in the graph:
+
+.. code-block:: cylc-graph
+
+   foo:x => bar
+   ...
+   bar:y? => ...  # (elsewhere)
+
+
+And if it it does not appear elsewhere, just declare it separately with
+no confusing dependency arrow:
+
+.. code-block:: cylc-graph
+
+   foo:x => bar
+   bar:y?
 
 
 Finish Triggers
@@ -1888,8 +1993,8 @@ relies on :term:`optional outputs <optional output>` and is called *branching*.
 
    Cylc 8 does not need suicide triggers for branching.
 
-Basic Example
-^^^^^^^^^^^^^
+Basic Example (A Switch)
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here Cylc will follow one of two "branches" depending on the outcome of task ``b``:
 
@@ -1935,8 +2040,19 @@ The ``?`` symbol denotes an :term:`optional output` which allows the graph to
 branch.
 
 Note the last line of the graph ``c | r => d`` allows the graph to
-continue on to ``d`` regardless of the path taken. This is an :term:`artificial
-dependency`.
+continue on to ``d`` regardless of the path taken.
+
+This is a simple example of a "switch" pattern, the task ``b`` being the switch
+in this case, the ``succeeded`` / ``failed`` outputs deciding which pathway
+through the graph the workflow will follow. We can use outputs besides
+``succeeded`` / ``failed`` to achieve this and can have any number of branches,
+see the
+:ref:`three-way switch example <user_guide.graph_branching.three_way_switch>`
+for more details.
+
+
+Recovery Tasks
+^^^^^^^^^^^^^^
 
 Branching is often used for automatic failure recovery. Here's a simple
 example:
@@ -1975,6 +2091,108 @@ A more realistic example might have several tasks on each branch. The
 ``recover`` task could, via inheritance, run the same underlying code as
 ``bar``, but configured differently to avoid the failure.
 
+
+Flaky Pipelines
+^^^^^^^^^^^^^^^
+
+Another pattern for using optional outputs is to assemble chains (or pipelines)
+of tasks where the chain is terminated on task failure.
+
+Here's a simple example:
+
+.. code-block:: cylc-graph
+
+   a? => b? => c?
+
+.. digraph:: Example
+   :align: center
+
+   a -> b [label="if a:succeeded", fontcolor="green"]
+   b -> c [label="if b:succeeded", fontcolor="green"]
+
+In Python, we might write this control flow like so:
+
+.. code-block:: python
+
+   if a():
+      if b():
+         c()
+
+Sometimes we might like to have a task at the end of the chain that runs no
+matter the outcome.
+
+.. code-block:: cylc-graph
+
+   a? => b? => c?
+
+   a:fail? | b:fail? | c:finish => end
+
+Note, ``:finish`` is shorthand for ``:succeed? | :fail?``, so this can be
+re-written as:
+
+.. code-block:: cylc-graph
+
+   a? => b? => c?
+
+   a:fail? | b:fail? | (c? | c:fail?) => end
+
+.. digraph:: Example
+   :align: center
+
+   a -> b -> c
+
+   a -> end [arrowhead="empty", style="dashed"]
+   b -> end [arrowhead="empty", style="dashed"]
+   c -> end [arrowhead="empty", style="dashed"]
+
+This arrangement may be useful for collating the results of parallel chains:
+
+.. code-block:: cylc-graph
+
+   a<x>? => b<x>? => c<x>?
+
+   a<x>:fail? | b<x>:fail? | (c<x>? | c<x>:fail?) => end<x>
+
+   end<x> => collate
+
+.. digraph:: Example
+   :align: center
+
+   subgraph cluster_1 {
+       label = "x=1"
+       style = "dashed"
+
+       a_1 -> b_1 -> c_1
+
+       a_1 -> end_1 [arrowhead="empty", style="dashed"]
+       b_1 -> end_1 [arrowhead="empty", style="dashed"]
+       c_1 -> end_1 [arrowhead="empty", style="dashed"]
+   }
+   subgraph cluster_2 {
+       label = "x=2"
+       style = "dashed"
+
+       a_2 -> b_2 -> c_2
+
+       a_2 -> end_2 [arrowhead="empty", style="dashed"]
+       b_2 -> end_2 [arrowhead="empty", style="dashed"]
+       c_2 -> end_2 [arrowhead="empty", style="dashed"]
+
+   }
+   subgraph cluster_3 {
+       label = "x=3"
+       style = "dashed"
+
+       a_3 -> b_3 -> c_3
+
+       a_3 -> end_3 [arrowhead="empty", style="dashed"]
+       b_3 -> end_3 [arrowhead="empty", style="dashed"]
+       c_3 -> end_3 [arrowhead="empty", style="dashed"]
+   }
+
+   end_1 -> collate
+   end_2 -> collate
+   end_3 -> collate
 
 Dependencies With Multiple Optional Outputs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2077,6 +2295,8 @@ combination of success/failure for the two tasks:
 
 Try editing the ``script`` in this example to see which tasks are run.
 
+
+.. _user_guide.graph_branching.three_way_switch:
 
 Custom Outputs
 ^^^^^^^^^^^^^^
@@ -2219,24 +2439,29 @@ executing, e.g:
 Runahead Limiting
 -----------------
 
-Runahead limiting prevents a workflow from getting too far ahead of the oldest
-active cycle point by holding back tasks in cycles beyond a specified limit.
+Runahead limiting restricts workflow activity to a configurable number of
+cycles beyond the earliest :term:`active cycle`.
 
-The runahead limit is defined as an interval measured from the oldest active cycle.
-A cycle is considered to be "active" if it contains any :term:`active` tasks
-(e.g. running tasks).
+.. TODO - update this after https://github.com/cylc/cylc-flow/issues/5580:
 
-Tasks in cycles which are beyond the limit are called :term:`runahead` tasks
-and are displayed in the GUI/Tui with small circle above them:
+Tasks in the :term:`n=0 window <n-window>` at the runahead limit are actively
+held back, and are displayed in the GUI/Tui with a small circle above them.
 
 .. image:: ../../img/task-job-icons/task-isRunahead.png
    :width: 60px
    :height: 60px
 
+.. note::
+
+   Tasks in the :term:`n>=1 window <n-window>` are not displayed as runahead
+   limited; they form the future graph and are not yet being actively limited.
+   (Note this goes for all tasks downstream of actively limited ones, not just
+   those in future cycles).
+
 As the workflow advances and active cycles complete, the runahead limit moves
 forward allowing tasks in later cycles to run.
 
-There are two ways of defining the interval which defines the runahead limit,
+There are two ways of defining the interval which defines the runahead limit:
 as an integer number of cycles, or as a datetime interval.
 
 
@@ -2266,13 +2491,19 @@ is four cycles after this (i.e. cycle 4). So the task ``foo`` will immediately
 submit in cycles 1, 2, 3 and 4, however, the tasks in cycles 5 onwards will
 wait until earlier cycles complete, and the runahead limit advances.
 
-* 1 |task-submitted| - **initial cycle point**
-* 2 |task-submitted|
-* 3 |task-submitted|
-* 4 |task-submitted| - **runahead limit**
-* 5 |task-runahead-super| (held back by runahead limit)
-* 6 |task-runahead-super| (held back by runahead limit)
-* X |task-runahead-super| (held back by runahead limit)
+* 1 |task-submitted| - :term:`active task` at the **initial cycle point**
+* 2 |task-submitted| - active task
+* 3 |task-submitted| - active task
+* 4 |task-submitted| - active task
+* 5 |task-runahead-super| - active task, held back by the **runahead limit**
+* 6 |task-waiting| - (future task, beyond the runahead limit)
+* ...
+
+.. note::
+
+   Depending on graph structure and :term:`n-window extent <n-window>` you
+   may see tasks beyond the runahead limit displayed as waiting. They form
+   the future graph and are not yet actively runahead limited.
 
 As the workflow advances and earlier cycles complete, the runahead limit
 moves on. E.G. Once the cycles 1 & 2 have completed, the runahead limit will
@@ -2293,13 +2524,13 @@ interval, so if we change the cycling interval from ``P1`` to ``P2Y``:
 Then, the task ``foo`` would submit immediately in the cycles 1, 3, 5 and 7.
 Cycles from 9 onwards will be held back.
 
-* 2000 |task-submitted| - **initial cycle point**
-* 2002 |task-submitted|
-* 2004 |task-submitted|
-* 2006 |task-submitted| - **runahead limit**
-* 2008 |task-runahead-super| (held back by runahead limit)
-* 2010 |task-runahead-super| (held back by runahead limit)
-* XXXX |task-runahead-super| (held back by runahead limit)
+* 2000 |task-submitted| - :term:`active task` at the **initial cycle point**
+* 2002 |task-submitted| - active task
+* 2004 |task-submitted| - active task
+* 2006 |task-submitted| - active task
+* 2008 |task-runahead-super| - active task, held back by the **runahead limit**
+* 2010 |task-waiting| - (future task, beyond the runahead limit)
+* ...
 
 
 Datetime Format
@@ -2319,12 +2550,12 @@ This approach *does* depend on the cycling intervals, e.g:
 
 When this workflow starts, the task foo in the first three cycles will run:
 
-* 2000 |task-submitted| - **initial cycle point**
-* 2002 |task-submitted|
-* 2004 |task-submitted| - **runahead limit**
-* 2006 |task-runahead-super| (held back by runahead limit)
-* 2008 |task-runahead-super| (held back by runahead limit)
-* XXXX |task-runahead-super| (held back by runahead limit)
+* 2000 |task-submitted| - :term:`active task` at the **initial cycle point**
+* 2002 |task-submitted| - active task
+* 2004 |task-submitted| - active task
+* 2006 |task-runahead-super| - active task, held back by the **runahead limit**
+* 2008 |task-waiting| - (future task, beyond the runahead limit)
+* ...
 
 
 Runahead Limit Notes

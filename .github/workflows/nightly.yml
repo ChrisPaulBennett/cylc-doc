@@ -29,6 +29,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
+env:
+  FORCE_COLOR: 'true'
+  PIP_PROGRESS_BAR: 'off'
+
 jobs:
   set-meta-releases:
     # read the meta-release versions from the branches.json file
@@ -62,12 +66,12 @@ jobs:
       META_DICT: ${{ needs.set-meta-releases.outputs.dict }}
     steps:
       - name: configure python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
       - name: checkout cylc-doc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ fromJson(env.META_DICT)[matrix.meta_release]['cylc/cylc-doc'] }}
           path: docs
@@ -93,7 +97,7 @@ jobs:
           metomi_rose_opts: ''
 
       - name: checkout gh-pages branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: gh-pages
           path: gh-pages
@@ -144,12 +148,10 @@ jobs:
           builddir="nightly_${{ matrix.meta_release }}"
           make -C docs \
             html \
-            linkcheck \
             SPHINXOPTS="-Wn --keep-going -A sidebar_version_name=${version}" \
             STABLE=false \
             LATEST=false \
-            BUILDDIR="doc/$builddir" \
-            FORCE_COLOR=true
+            BUILDDIR="doc/$builddir"
           git -C gh-pages add "$builddir" 'versions.json'
 
       - name: debug - pip list

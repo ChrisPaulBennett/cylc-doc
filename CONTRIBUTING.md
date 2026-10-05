@@ -9,8 +9,8 @@ recipe to reproduce the problem.
 
 ## Request Enhancements
 
-Request enhancements by opening an issue at [Github
-](https://github.com/cylc/cylc-doc/issues). Describe your use case in
+Request enhancements by opening an issue at
+[Github](https://github.com/cylc/cylc-doc/issues). Describe your use case in
 detail.
 
 ## Contribute Code
@@ -56,6 +56,9 @@ requests_).
  - Thomas Coleman
  - Scott Wales
  - Elliot Fontaine
+ - Mark Dawson
+ - James Frost
+ - Samuel Denton
 <!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version

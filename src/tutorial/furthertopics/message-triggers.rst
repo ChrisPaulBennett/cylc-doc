@@ -27,7 +27,7 @@ complete.
 We could also set up :term:`message triggers <message trigger>` to, for example,
 send an email to inform us that a submission has failed, making use of Cylc's
 task event handling system. More information is available on these in the
-`Cylc User Guide`_.
+:ref:`Cylc User Guide <MessageTriggers>`.
 
 
 :term:`Message triggers <message trigger>` provide a superior solution to
@@ -41,13 +41,13 @@ How to create a message trigger
 
 In order to get our workflow to trigger messages, we need to:
 
-* specify our custom message in a section called ``[[outputs]]`` within the
-     ``[runtime]`` section of our workflow,
+* specify our custom message in a section called ``[[[outputs]]]`` within the
+  ``[runtime][<namespace>]`` section of our workflow,
 
 * add ``cylc message -- "${CYLC_WORKFLOW_ID}" "${CYLC_TASK_JOB}" "YOUR CHOSEN TRIGGER MESSAGE"``
-     to the ``script`` section of ``[runtime]``, your chosen trigger message
-     should be unique and should exactly match the message defined in
-     ``[[outputs]]``.
+  to the ``script`` section of ``[runtime]``, your chosen trigger message
+  should be unique and should exactly match the message defined in
+  ``[[outputs]]``.
 
 * Refer to these messages in the ``[dependencies]`` section of our workflow.
 

@@ -28,7 +28,7 @@ applications wrapped by the tasks.
 .. note::
 
    At runtime, tasks can access their own workflow task name as
-   ``$CYLC_TASK_NAME`` in the job environment :ref:`job environment
+   :envvar:`CYLC_TASK_NAME` in the job environment :ref:`job environment
    <TaskExecutionEnvironment>` if needed.
 
 
@@ -288,11 +288,13 @@ parent variable:
 Job Script Variables
 ^^^^^^^^^^^^^^^^^^^^
 
-These variables provided by the :term:`scheduler` are available to
-:term:`job scripts <job script>`:
+The :term:`scheduler` provides a standard set of variables to
+:term:`job scripts <job script>`.
 
-.. literalinclude:: ../../reference/job-script-vars/var-list.txt
-   :language: sub
+.. seealso::
+
+    :ref:`job-script-environment-variables`
+       List of variables provided for job scripts.
 
 Some global shell variables are also defined in the job script, but not
 exported to subshells:
@@ -313,7 +315,7 @@ Workflow Share Directories
 
 The workflow :term:`share directory` is created automatically under the
 workflow run directory as a convenient shared space for tasks. The location is
-available to tasks as ``$CYLC_WORKFLOW_SHARE_DIR``. In a cycling workflow,
+available to tasks as :envvar:`CYLC_WORKFLOW_SHARE_DIR`. In a cycling workflow,
 output files are typically held in cycle point sub-directories of this.
 
 The top level share directory location can be changed, e.g. to a large data
@@ -341,10 +343,10 @@ Task Work Directories
 
 Job scripts are executed from within :term:`work directories <work
 directory>` created automatically under the workflow run directory. A task can
-access its own work directory via ``$CYLC_TASK_WORK_DIR`` (or simply ``$PWD``
-if it does not change to another location at runtime). By default the location
-contains task name and cycle point, to provide a unique workspace for every
-instance of every task.
+access its own work directory via :envvar:`CYLC_TASK_WORK_DIR` (or simply
+``$PWD`` if it does not change to another location at runtime). By default the
+location contains task name and cycle point, to provide a unique workspace for
+every instance of every task.
 
 The top level work directory location can be changed, e.g. to a large data
 area, by global config settings under :cylc:conf:`global.cylc[install][symlink dirs]`.
@@ -527,6 +529,9 @@ or submit-failed using these task configurations:
    Configure retries for jobs which failed during submission so never ran
    (submit-failed jobs - |job-submit-failed|).
 
+Tasks that fail but are configured to :term:`retry` return to the ``waiting``
+state, with a new clock trigger to handle the configured retry delay.
+
 Retry delays should be set to a list of
 :term:`ISO8601 durations <ISO8601 duration>` that specify how long to wait
 before retrying the task again, e.g:
@@ -621,8 +626,8 @@ Advanced Example
 Aborting a Retry Sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To prevent a task from retrying, remove it from the scheduler's
-:term:`active window`, e.g:
+To prevent a task from retrying, remove it from the
+:term:`n=0 window <n-window>`.
 
 .. code-block:: console
 
@@ -650,14 +655,14 @@ as complete (and with the ``--flow`` option, if needed to make a specific
 Task Event Handling
 -------------------
 
-Task event handlers allow configured commands to run when task events occur.
+Task event handlers allow configured commands to run when task events occur,
+e.g. ``submitted`` and ``failed``.
 
-.. note::
+.. admonition:: Not to be confused with
+   :class: tip
 
-   Cylc supports workflow events e.g. ``startup`` and ``shutdown``
-   and task events e.g. ``submitted`` and ``failed``.
-
-   See also :ref:`user_guide.scheduler.workflow_event_handling`.
+   For *workflow* events, e.g. ``startup`` and ``shutdown``, see
+   :ref:`user_guide.scheduler.workflow_event_handling`.
 
 Event handlers can be used to send a message, raise an alarm, or whatever you
 like. They can even call ``cylc`` commands to intervene in the workflow.
@@ -676,6 +681,43 @@ Event handlers can be stored in the workflow ``bin`` directory, or anywhere in
 They should return quickly to avoid tying up the scheduler process pool -
 see :ref:`Managing External Command Execution`.
 
+.. _user_guide.runtime.task_event_handling.list:
+
+List Of Task Events
+^^^^^^^^^^^^^^^^^^^
+
+.. cylc-scope:: flow.cylc[runtime][<namespace>]
+
+.. |br| raw:: html
+
+     <br>
+
+.. table::
+
+   =========================================  ================================
+   Event                                      Description
+   =========================================  ================================
+   submitted                                  job submitted
+   submission retry                           job submission failed but will retry after the configured :cylc:conf:`submission retry delays`
+   submission failed                          job submission failed and no retries are configured or remaining
+   started                                    job started running
+   retry                                      job failed but will retry after the configured :cylc:conf:`execution retry delays`
+   failed                                     job failed and no retries are configured or remaining
+   succeeded                                  job succeeded
+   submission timeout                         job exceeded the :cylc:conf:`[events]submission timeout` while in the ``submitted`` state
+   execution timeout                          job exceeded the :cylc:conf:`[events]execution timeout` while in the ``running`` state
+   warning                                    scheduler received a message of severity WARNING from job
+   critical                                   scheduler received a message of severity CRITICAL from job
+   custom                                     scheduler received a message of severity CUSTOM from job |br| (note: literally, the word ``CUSTOM``)
+   expired                                    task expired and will not submit (too far behind)
+   late                                       task running later than expected
+   =========================================  ================================
+
+Any of a task's :term:`custom outputs <custom output>` are also valid event
+names.
+
+.. cylc-scope::
+
 
 .. _user_guide.runtime.task_event_handling.event_specific_handlers:
 
@@ -684,33 +726,7 @@ Event-Specific Handlers
 
 Event-specific handlers are configured by ``<event> handlers``
 under :cylc:conf:`[runtime][<namespace>][events]`, where ``<event>``
-can be:
-
-.. |br| raw:: html
-
-     <br>
-
-
-.. table::
-
-   =========================================  ================================
-   Event                                      Description
-   =========================================  ================================
-   submitted                                  job submitted
-   submission retry                           job submission failed but will retry later
-   submission failed                          job submission failed
-   started                                    job started running
-   retry                                      job failed but will retry later
-   failed                                     job failed
-   succeeded                                  job succeeded
-   submission timeout                         job timed out in the ``submitted`` state
-   execution timeout                          job timed out in the ``running`` state
-   warning                                    scheduler received a message of severity WARNING from job
-   critical                                   scheduler received a message of severity CRITICAL from job
-   custom                                     scheduler received a message of severity CUSTOM from job |br| (note: literally, the word ``CUSTOM``)
-   expired                                    task expired and will not submit (too far behind)
-   late                                       task running later than expected
-   =========================================  ================================
+can be any in the table above.
 
 Values should be a list of commands, command lines, or command line templates
 (see below) to call if the specified event is triggered.
@@ -727,8 +743,8 @@ Alternatively you can configure a list of generic event :cylc:conf:`handlers` to
 for configured :cylc:conf:`handler events`.
 
 :cylc:conf:`handler events`
-   A list of events which may include any of the above
-   events (e.g. ``submission failed`` or ``warning``) or
+   A list of events which may include any of the events in the table above
+   (e.g. ``submission failed`` or ``warning``) or
    any of a task's :term:`custom outputs <custom output>`.
 :cylc:conf:`handlers`
    A list of commands to be run for these events.
@@ -837,10 +853,10 @@ Late Events
 
 .. warning::
 
-  The scheduler can only check for lateness once a task has appeared in its
-  active task window. In Cylc 8 this is usually when the task is actually
-  ready to run, which severely limits the usefulness of late events as
-  currently implemented.
+  The scheduler can only check for lateness once a task becomes
+  :term:`active <active task>`. In Cylc 8 this usually means the task
+  is ready, or nearly ready, to run, which limits the usefulness of late
+  events.
 
 If a real time (clock-triggered) workflow performs fairly consistently from one
 cycle to the next, you may want to be notified when certain tasks are running
@@ -865,5 +881,5 @@ triggers at 30 minutes after cycle point, a late event could be configured like 
 
 .. [1] The order of precedence for inheritance from multiple parents is
   determined by the `C3 algorithm
-  <https://en.wikipedia.org/wiki/C3_linearization>`_ used to find
+  <https://docs.python.org/3/howto/mro.html>`_ used to find
   the linear method resolution order for multiple inheritance in Python.

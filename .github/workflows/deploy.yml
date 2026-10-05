@@ -65,15 +65,15 @@ jobs:
         shell: bash -leo pipefail {0}
     steps:
       - name: configure python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
       - name: configure git
         uses: cylc/release-actions/configure-git@v1
 
       - name: checkout cylc-doc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.cylc-flow-tag }}
           path: docs
@@ -105,11 +105,11 @@ jobs:
         uses: ./docs/.github/actions/create-conda-envs
         if: ${{ ! inputs.skip_conda_environment_check }}
         with:
-          python_version: '3.9'
+          python_version: '3.x'
           working_directory: ./docs
 
       - name: checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: gh-pages
           path: gh-pages

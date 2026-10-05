@@ -6,6 +6,8 @@ Families
 :term:`Families <family>` provide a way of grouping tasks together so they can
 be treated as one.
 
+They can be used to consolidate tasks runtime configuration and environment variables,
+as well as to simplify the workflow's :term:`graph` by grouping together related tasks.
 
 Runtime
 -------
@@ -13,23 +15,22 @@ Runtime
 .. ifnotslides::
 
    :term:`Families <family>` are groups of tasks which share a common
-   configuration. In the present example the common configuration is:
+   configuration. In this example we have multiple tasks sharing this configuration:
 
    .. code-block:: cylc
 
-      script = get-observations
-      [[[environment]]]
-          API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      [[consolidate_observations]]
+          [[[environment]]]
+              DOMAIN = -12,46,12,61
 
    We define a family as a new task consisting of the common configuration. By
    convention families are named in upper case:
 
 .. code-block:: cylc
 
-   [[GET_OBSERVATIONS]]
-       script = get-observations
+   [[PROCESS_DATA]]
        [[[environment]]]
-           API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+           DOMAIN = -12,46,12,61
 
 .. ifnotslides::
 
@@ -37,10 +38,8 @@ Runtime
 
 .. code-block:: cylc
 
-   [[get_observations_heathrow]]
-       inherit = GET_OBSERVATIONS
-       [[[environment]]]
-           SITE_ID = 3772
+   [[consolidate_observations]]
+       inherit = PROCESS_DATA
 
 .. ifnotslides::
 
@@ -50,60 +49,27 @@ Runtime
 
 .. code-block:: cylc
 
-   [[get_observations_heathrow]]
-       script = get-observations
+   [[consolidate_observations]]
        [[[environment]]]
-           API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-           SITE_ID = 3772
+           DOMAIN = -12,46,12,61
 
 .. nextslide::
 
 .. ifnotslides::
 
    It is possible to override inherited configuration within the task. For
-   example if we wanted the ``get_observations_heathrow`` task to use a
-   different API key we could write:
+   example if we wanted the ``consolidate_observations`` task to use a different
+   domain compared to the other members of the family we could do:
 
 .. code-block:: cylc
    :emphasize-lines: 4
 
-   [[get_observations_heathrow]]
-       inherit = GET_OBSERVATIONS
+   [[consolidate_observations]]
+       inherit = PROCESS_DATA
        [[[environment]]]
-           API_KEY = special-api-key
-           SITE_ID = 3772
+           DOMAIN = -10,40,10,60
 
 .. nextslide::
-
-.. ifnotslides::
-
-   Using families the ``get_observations`` tasks could be written like so:
-
-.. code-block:: cylc
-
-   [runtime]
-       [[GET_OBSERVATIONS]]
-           script = get-observations
-           [[[environment]]]
-               API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-
-       [[get_observations_heathrow]]
-           inherit = GET_OBSERVATIONS
-           [[[environment]]]
-               SITE_ID = 3772
-       [[get_observations_camborne]]
-           inherit = GET_OBSERVATIONS
-           [[[environment]]]
-               SITE_ID = 3808
-       [[get_observations_shetland]]
-           inherit = GET_OBSERVATIONS
-           [[[environment]]]
-               SITE_ID = 3005
-       [[get_observations_aldergrove]]
-           inherit = GET_OBSERVATIONS
-           [[[environment]]]
-               SITE_ID = 3917
-
 
 Graphing
 --------
@@ -144,7 +110,7 @@ Graphing
       Run as soon as all of the family members have completed (i.e. have each
       either succeeded or failed).
 
-   For more information on family triggers see the `Cylc User Guide`_.
+   For more information on family triggers see the :ref:`Cylc User Guide <FamilyTriggers>`.
 
 .. ifslides::
 
@@ -246,7 +212,7 @@ The ``root`` Family
       .. code-block:: none
 
          RESOLUTION = 0.2
-         DOMAIN = -12,48,5,61  # Do not change!
+         DOMAIN = -12,46,12,61  # Do not change!
 
       Rather than manually adding them to each task individually we could put
       them in the ``root`` family, making them accessible to all tasks.
@@ -262,7 +228,7 @@ The ``root`` Family
          +            # The dimensions of each grid cell in degrees.
          +            RESOLUTION = 0.2
          +            # The area to generate forecasts for (lng1, lat1, lng2, lat2).
-         +            DOMAIN = -12,48,5,61  # Do not change!
+         +            DOMAIN = -12,46,12,61  # Do not change!
 
       .. code-block:: diff
 
@@ -272,18 +238,15 @@ The ``root`` Family
          -        # The dimensions of each grid cell in degrees.
          -        RESOLUTION = 0.2
          -        # The area to generate forecasts for (lng1, lat1, lng2, lat2).
-         -        DOMAIN = -12,48,5,61  # Do not change!
+         -        DOMAIN = -12,46,12,61  # Do not change!
 
           [[get_rainfall]]
               script = get-rainfall
-              [[[environment]]]
-                  # The key required to get weather data from the DataPoint service.
-                  # To use archived data comment this line out.
-                  API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+         -    [[[environment]]]
          -        # The dimensions of each grid cell in degrees.
          -        RESOLUTION = 0.2
          -        # The area to generate forecasts for (lng1, lat1, lng2, lat2).
-         -        DOMAIN = -12,48,5,61  # Do not change!
+         -        DOMAIN = -12,46,12,61  # Do not change!
 
           [[forecast]]
               script = forecast 60 5  # Generate 5 forecasts at 60 minute intervals.
@@ -291,7 +254,7 @@ The ``root`` Family
          -        # The dimensions of each grid cell in degrees.
          -        RESOLUTION = 0.2
          -        # The area to generate forecasts for (lng1, lat1, lng2, lat2)
-         -        DOMAIN = -12,48,5,61  # Do not change!
+         -        DOMAIN = -12,46,12,61  # Do not change!
                   # The path to the files containing wind data (the {variables} will
                   # get substituted in the forecast script).
                   WIND_FILE_TEMPLATE = $CYLC_WORKFLOW_WORK_DIR/{cycle}/consolidate_observations/wind_{xy}.csv
@@ -306,13 +269,13 @@ The ``root`` Family
                   MAP_TEMPLATE = "$CYLC_WORKFLOW_RUN_DIR/lib/template/map.html"
 
           [[post_process_exeter]]
-              # Generate a forecast for Exeter 60 minutes into the future.
-              script = post-process exeter 60
+              # Generate a forecast for Exeter 300 minutes into the future.
+              script = post-process exeter 300
          -    [[[environment]]]
          -        # The dimensions of each grid cell in degrees.
          -        RESOLUTION = 0.2
          -        # The area to generate forecasts for (lng1, lat1, lng2, lat2).
-         -        DOMAIN = -12,48,5,61  # Do not change!
+         -        DOMAIN = -12,46,12,61  # Do not change!
 
       To ensure that the environment variables are being inherited correctly
       by the tasks, inspect the ``[runtime]`` section using ``cylc config``

@@ -39,20 +39,23 @@ jobs:
       TAG: ${{ inputs.tag }}
     steps:
       - name: configure python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.9'
+          python-version: '3.x'
+
+      - name: install deps
+        run: pip install packaging
 
       - name: configure git
         uses: cylc/release-actions/configure-git@v1
 
       - name: checkout cylc-doc
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: docs
 
       - name: checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: gh-pages
           path: gh-pages

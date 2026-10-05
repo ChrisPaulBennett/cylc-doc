@@ -23,21 +23,18 @@ The :cylc:conf:`flow.cylc` File Format
 
 .. ifnotslides::
 
+   * :cylc:conf:`flow.cylc` files are divided into sections, written inside square
+     brackets, i.e. ``[section-name]``.
+   * In this tutorial you will see ``[scheduler]`` and ``[scheduling]``. 
+   * Sections are nested by adding extra brackets: ``[[sub-section]]``, 
+     ``[[[sub-sub-section]]]``, etc.
+   * Settings are written as ``key = value`` pairs within any section.
    * Comments start with a ``#`` character.
-   * Settings are written as ``key = value`` pairs.
-   * Settings can be contained within sections.
-   * Sections are written inside square brackets i.e. ``[section-name]``.
-   * Sections can be nested, by adding an extra square bracket with each level,
-     so a sub-section would be written ``[[sub-section]]``, a sub-sub-section
-     ``[[[sub-sub-section]]]``, and so on.
 
    .. note::
 
       Prior to Cylc 8, :cylc:conf:`flow.cylc` was named ``suite.rc``,
       but that name is now deprecated.
-
-      See :ref:`cylc_7_compat_mode` for information on compatibility with
-      existing Cylc 7 ``suite.rc`` files.
 
 Example
 ^^^^^^^
@@ -55,10 +52,10 @@ Example
                String
            """
 
-Shorthand
-^^^^^^^^^
+.. admonition:: Shorthand
+   :class: tip
 
-.. include:: ../../reference/config/shorthand.rst
+   .. include:: ../../reference/config/shorthand.rst
 
 Duplicate Items
 ^^^^^^^^^^^^^^^

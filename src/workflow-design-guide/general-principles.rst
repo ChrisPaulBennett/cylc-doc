@@ -25,14 +25,14 @@ more task level concurrency and quicker failure recovery - you can rerun just
 what failed without repeating anything unnecessarily.
 
 
-rose bunch
+Rose Bunch
 ^^^^^^^^^^
 
 One caveat to our fine-graining advice is that submitting a large number of
 small tasks at once may be a problem on some platforms. If you have many
-similar concurrent jobs you can use ``rose bunch`` to pack them into a
-single task with incremental rerun capability: retriggering the task will rerun
-just the component jobs that did not successfully complete earlier.
+similar concurrent jobs you can use :ref:`builtin.rose_bunch` to pack them into
+a single task with incremental rerun capability: retriggering the task will
+rerun just the component jobs that did not successfully complete earlier.
 
 
 .. _Monolithic Or Interdependent Workflows:
@@ -121,7 +121,7 @@ standards such as:
 
 - `PEP8 for Python <https://peps.python.org/pep-0008/>`_
 - `Google Shell Style Guide for
-  Bash <https://google.github.io/styleguide/shell.xml>`_
+  Bash <https://google.github.io/styleguide/shellguide.html>`_
 
 
 Basic Functionality
@@ -268,6 +268,9 @@ It is important to note that frequent polling may be bad for some filesystems,
 so be sure to configure a reasonable interval between polls.
 
 
+
+.. _design-guide.execution-time-limit:
+
 Task Execution Time Limits
 --------------------------
 
@@ -305,7 +308,8 @@ Runahead Limiting
 ^^^^^^^^^^^^^^^^^
 
 By default Cylc allows a maximum of five cycle points to be active at the same
-time, but this value is configurable:
+time, but this value can be configured by
+:cylc:conf:`[scheduling]runahead limit`:
 
 .. code-block:: cylc
 
@@ -318,7 +322,8 @@ time, but this value is configurable:
 Internal Queues
 ^^^^^^^^^^^^^^^
 
-Tasks can be assigned to named internal queues that limit the number of members
+Tasks can be assigned to named internal
+:cylc:conf`queues <[scheduling][queues]>` that limit the number of members
 that can be active (i.e. submitted or running) at the same time:
 
 .. code-block:: cylc
@@ -349,7 +354,7 @@ typically the last tasks in each cycle, should be included to archive selected
 important files and then delete everything at some offset from the current
 cycle point.
 
-The Rose built-in apps ``rose_arch`` and ``rose_prune``
+The Rose built-in apps :ref:`rose_arch` and :ref:`builtin.rose_prune`
 provide an easy way to do this. They can be configured easily with
 file-matching patterns and cycle point offsets to perform various housekeeping
 operations on matched files.
@@ -401,8 +406,8 @@ that need it:
 Inheritance
 ^^^^^^^^^^^
 
-Sharing by inheritance of task families is recommended when more than a few
-configuration items are involved.
+Sharing by inheritance of task :term:`families <family>` is recommended when more than a
+few configuration items are involved.
 
 The simplest application of inheritance is to set global defaults in the
 ``[runtime][root]`` namespace that is inherited by all tasks.
@@ -449,9 +454,9 @@ of usage worth addressing here.
 
 Primarily, for self-containment (see :ref:`Self-Contained Workflows`) shared IO
 paths should be under the *workflow share directory*, the location of which is
-passed to all tasks as ``$CYLC_WORKFLOW_SHARE_DIR``.
+passed to all tasks as :envvar:`CYLC_WORKFLOW_SHARE_DIR`.
 
-The ``$CYLC_TASK_SHARE_CYCLE_DIR`` variable can be used to target
+The :envvar:`CYLC_TASK_SHARE_CYCLE_DIR` variable can be used to target
 cyclepoint-specific locations under the workflow share directory.
 
 Sometimes it may be useful to refer to other cycles - to do this use
@@ -469,12 +474,12 @@ See ``isodatetime --help`` for usage instructions.
 
 .. versionadded:: 8.5.0
 
-   ``$CYLC_TASK_SHARE_CYCLE_DIR`` (used in combination with the ``isodatetime``
+   :envvar:`CYLC_TASK_SHARE_CYCLE_DIR` (used in combination with the ``isodatetime``
    command) is designed to
    provide a Cylc internal replacement for the use of ``rose task-env``
    to provide ``$ROSE_DATAC`` and derived variables.
 
-Subdirectories of ``$CYLC_TASK_SHARE_CYCLE_DIR`` should be agreed between
+Subdirectories of :envvar:`CYLC_TASK_SHARE_CYCLE_DIR` should be agreed between
 different sub-systems of the workflow; typically they are named for the
 file-generating tasks, and the file-consuming tasks should know to look there.
 

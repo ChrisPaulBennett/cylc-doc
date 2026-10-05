@@ -79,7 +79,7 @@ Environment Variables
 .. ifnotslides::
 
    The name of the parameter is provided to the job as an environment variable
-   called ``CYLC_TASK_PARAM_<parameter>`` where ``<parameter>`` is the name of
+   called :envvar:`CYLC_TASK_PARAM_\<param\>` where ``<param>`` is the name of
    the parameter (in the present case ``world``):
 
 .. code-block:: cylc
@@ -159,8 +159,6 @@ Parameters can be either strings or integers:
    [runtime]
        [[get_observations<station>]]
            script = get-observations
-           [[[environment]]]
-               API_KEY = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
        [[get_observations<station=aldergrove>]]
            [[[environment]]]
@@ -179,7 +177,7 @@ Parameters can be either strings or integers:
 
 .. ifnotslides::
 
-   For more information see the `Cylc User Guide`_.
+   For more information see the :ref:`Cylc User Guide <User Guide Param>`.
 
 .. ifslides::
 
@@ -216,8 +214,6 @@ Parameters can be either strings or integers:
 
          [[get_observations<station>]]
              script = get-observations
-             [[[environment]]]
-                 API_KEY = {{ API_KEY }}
 
       Using ``cylc config`` you should see that Cylc replaces the
       ``<station>`` with each of the stations in turn, creating a new task for
@@ -264,7 +260,7 @@ Parameters can be either strings or integers:
                     SITE_ID = 3005
 
       Using ``cylc config`` you should now see four ``get_observations``
-      tasks, each with a ``script``, an ``API_KEY`` and a ``SITE_ID``:
+      tasks, each with a ``script`` and a ``SITE_ID``:
 
       .. code-block:: bash
 
@@ -318,7 +314,7 @@ Parameters can be either strings or integers:
 
              [task parameters]
                  station = aldergrove, camborne, heathrow, shetland
-            +        site = exeter, edinburgh
+            +    site = exeter, edinburgh
 
          Next we parameterize the task in the graph:
 
@@ -334,6 +330,6 @@ Parameters can be either strings or integers:
 
             -[[post_process_exeter]]
             +[[post_process<site>]]
-                 # Generate a forecast for Exeter 60 minutes in the future.
-            -    script = post-process exeter 60
-            +    script = post-process $CYLC_TASK_PARAM_site 60
+                 # Generate a forecast [length * count] minutes in the future.
+            -    script = post-process exeter {{ FORECAST_LENGTH * FORECAST_COUNT }}
+            +    script = post-process "$CYLC_TASK_PARAM_site" {{ FORECAST_LENGTH * FORECAST_COUNT }}

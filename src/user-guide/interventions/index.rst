@@ -88,12 +88,55 @@ Re-Run a Task
          $ cylc trigger <workflow>//<task>
 
 
+.. _interventions.re-run-multiple-tasks:
+
 Re-Run Multiple Tasks
 ---------------------
 
 :Example:
-   I need to make changes to a task, then re-run it and everything downstream
-   of it.
+   I need to re-run a few tasks in order.
+
+:Solution:
+   Determine the tasks you want to re-run and trigger all of them at the
+   same time.
+
+   We often want to
+   :ref:`edit the tasks configuration <interventions.edit-a-tasks-configuration>`
+   before doing this.
+
+.. tab-set::
+
+   .. tab-item:: GUI
+      :sync: gui
+
+      .. image:: ./../../reference/changes/group-trigger.gif
+         :width: 75%
+
+   .. tab-item:: CLI
+      :sync: cli
+
+      .. code-block:: console
+
+         $ cylc trigger <workflow>// \
+         >   //<cycle-1>/<task-2> \
+         >   //<cycle-2>/<task-2> \
+         >   ...
+
+.. admonition:: Workflow design tip
+   :class: tip
+
+   If there is a group of tasks that might often need to be re-run together,
+   consider grouping them into a :term:`family` so that you can easily trigger them
+   all at once using the family name.
+
+
+.. _interventions.reflow:
+
+Re-Run A Task And Everything After It
+-------------------------------------
+
+:Example:
+   I want to reconfigure a task, then re-run it and all tasks downstream of it.
 
 :Solution:
    :ref:`Edit the tasks configuration <interventions.edit-a-tasks-configuration>`,
@@ -104,7 +147,7 @@ Re-Run Multiple Tasks
    .. tab-item:: GUI
       :sync: gui
 
-      .. image:: re-run-multiple-tasks.gui.gif
+      .. image:: reflow.gui.gif
          :width: 75%
 
    .. tab-item:: CLI
@@ -113,6 +156,17 @@ Re-Run Multiple Tasks
       .. code-block:: console
 
          $ cylc trigger --flow=new <workflow>//<cycle>/<task>
+
+.. warning::
+
+   Tasks which have run before your trigger command will not have run in the
+   new flow. As a result, you may want to manually set task outputs to allow
+   the new flow to continue.
+
+   You can achieve this by setting the
+   :ref:`outputs <interventions.set-task-outputs>` of these tasks, or
+   satisfying the :ref:`prerequisites <interventions.set-task-prerequisites>`
+   of the tasks in the new flow.
 
 
 Re-Run All Failed Tasks
@@ -142,7 +196,7 @@ Re-Run All Failed Tasks
 
       .. code-block:: console
 
-         $ cylc trigger <workflow>:failed
+         $ cylc trigger <workflow>//*/*:failed
 
 
 .. _interventions.set-task-outputs:
@@ -558,7 +612,8 @@ Remove Tasks
 
          The removed task will be greyed out but it might not
          disappear from view because the GUI displays all tasks
-         in a graph-based window around current active tasks.
+         in a graph-based :term:`n-window` surrounding current
+         :term:`active tasks <active task>`.
 
 
    .. tab-item:: CLI
@@ -567,3 +622,35 @@ Remove Tasks
       .. code-block:: console
 
          cylc remove <workflow>//<cycle>/<id>
+
+
+Run tasks at the initial cycle point after a warm start
+-------------------------------------------------------
+
+.. versionchanged:: 8.6.2
+
+   This did not work properly in prior versions of Cylc 8.
+
+:Example:
+   I started the workflow using a :term:`start cycle point` greater than
+   the :term:`initial cycle point` (a.k.a. a :term:`warm start`).
+   Now I want to run some tasks at a cycle before the start cycle point.
+   e.g. a family of setup tasks that only exist at the initial cycle point.
+
+:Solution:
+   Trigger the desired tasks at the earlier cycle point.
+   See :ref:`interventions.re-run-multiple-tasks`.
+   All other tasks at cycles before the start cycle point are treated as already complete
+   (in :term:`flow` 1), so only the triggered tasks will run.
+
+.. tip::
+
+   The ``^`` character can be used as a shorthand for the initial cycle point
+   in the GUI and CLI.
+
+.. warning::
+
+   If the workflow shuts down while the group of tasks that you triggered
+   is still in progress, then on restart, Cylc will not remember what tasks
+   were still left to run in that group. You will need to trigger the remaining
+   tasks again.

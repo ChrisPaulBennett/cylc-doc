@@ -15,13 +15,14 @@ workflows.
 Workflow Events
 ---------------
 
-There are two types of event in Cylc:
+Workflow events, e.g. ``startup`` and ``shutdown``, pertain to the
+:term:`scheduler`.
 
-* workflow events e.g. ``startup`` and ``shutdown``, which pertain to the :term:`scheduler` 
-* task events e.g. ``submitted`` and ``failed``, which pertain to :term:`tasks <task>`.
+.. admonition:: Not to be confused with
+   :class: tip
 
-This section covers workflow events, for
-task events see :ref:`user_guide.runtime.task_event_handling`.
+   For :term:`task` events, e.g. ``submitted`` and ``failed``, see
+   :ref:`user_guide.runtime.task_event_handling`.
 
 .. rubric:: Event Handlers
 
@@ -33,15 +34,19 @@ run when workflow events occur. These can be configured by:
 
 .. rubric:: Abort On Event
 
-As well as event handlers, you can tell the scheduler to abort (i.e., shut down
-immediately with error status) on certain workflow events, using the
+As well as event handlers, you can tell the scheduler to shut down
+immediately (with error status) on certain workflow events, using the
 ``abort on ...`` configurations.
 
 .. rubric:: Configuration
 
 Some workflow events have related configurations e.g. for setting the timeout.
 
-.. rubric:: List of workflow events:
+
+.. _user_guide.scheduler.workflow_events.list:
+
+List of workflow events
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. cylc-scope:: global.cylc[scheduler][events]
 
@@ -66,7 +71,16 @@ Some workflow events have related configurations e.g. for setting the timeout.
    :Event Handler: `abort handlers`
 
    The scheduler shut down early with error status, due to a fatal error
-   condition or a configured timeout.
+   condition.
+
+   .. note::
+
+      Not to be confused with ``abort on <event>`` settings.
+      The ``abort`` event is not raised when any such configured event occurs.
+
+   .. versionchanged:: 8.0.0
+
+      This event was previously called ``aborted``.
 
 .. describe:: workflow timeout
 
@@ -79,9 +93,11 @@ Some workflow events have related configurations e.g. for setting the timeout.
    The timer starts counting down at scheduler startup. It resets on workflow
    restart.
 
-   Note, the ``abort`` event is not raised by "Abort On Event" handlers.
+   .. versionadded:: 8.0.0
 
 .. describe:: stall
+
+   .. _user_guide.workflow_events.stall:
 
    :Event Handler: `stall handlers`
 
@@ -90,6 +106,10 @@ Some workflow events have related configurations e.g. for setting the timeout.
 
    E.G. a task failure is blocking the pathway through the graph.
 
+   .. versionchanged:: 8.0.0
+
+      This event was previously called ``stalled``.
+
 .. describe:: stall timeout
 
    :Configuration: `stall timeout`
@@ -97,6 +117,10 @@ Some workflow events have related configurations e.g. for setting the timeout.
    :Abort On Event: `abort on stall timeout`
 
    The workflow timed out after stalling.
+
+   .. versionchanged:: 8.0.0
+
+      This event was previously called ``timeout``.
 
 .. describe:: inactivity timeout
 
@@ -110,6 +134,10 @@ Some workflow events have related configurations e.g. for setting the timeout.
    This can be useful for system administrators to help catch workflows which
    have become stalled on external conditions or system issues.
 
+   .. versionchanged:: 8.0.0
+
+      This event was previously called ``inactivity``.
+
 .. describe:: restart timeout
 
    :Configuration: `restart timeout`
@@ -117,6 +145,8 @@ Some workflow events have related configurations e.g. for setting the timeout.
    If a workflow that has run to completion is restarted, the scheduler will
    have nothing to do so will shut down. This timeout gives the user a grace
    period in which to trigger new tasks to continue the workflow run.
+
+   .. versionadded:: 8.2.0
 
 .. cylc-scope::
 
@@ -186,7 +216,7 @@ when a workflow is started:
 .. note::
 
    If you wish to use custom Python Libraries in an event handler you
-   need to add these to ``CYLC_PYTHONPATH`` rather than ``PYTHONPATH``.
+   need to add these to :envvar:`CYLC_PYTHONPATH` rather than ``PYTHONPATH``.
 
 .. _workflow_event_template_variables:
 
@@ -304,6 +334,20 @@ Example:
    :cylc:conf:`plugins`.
 
    .. cylc-scope::
+
+.. tip::
+
+   If using Cylc's workflow migration functionality to implement routine
+   server reboots and you have
+   :cylc:conf:`configured workflows to shut down <global.cylc[scheduler][events]abort on stall timeout>`
+   after one of these timeouts:
+
+   * :cylc:conf:`workflow timeout <global.cylc[scheduler][events]workflow timeout>`,
+   * :cylc:conf:`stall timeout <global.cylc[scheduler][events]stall timeout>`,
+   * :cylc:conf:`inactivity timeout <global.cylc[scheduler][events]inactivity timeout>`.
+
+   Then make sure the period between reboots is greater than the timeout
+   as the timer will be reset when the workflow migrates.
 
 For more information see: :cylc:conf:`global.cylc[scheduler][run hosts]ranking`.
 

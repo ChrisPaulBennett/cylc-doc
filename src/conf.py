@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.spawn import find_executable as which
 import os
 from pathlib import Path
+from shutil import which
 import sys
 
 from cylc.flow import __version__ as CYLC_VERSION
@@ -26,12 +26,38 @@ sys.path.append(os.path.abspath('lib'))  # path to lib.
 
 from cylc_release import CYLC_RELEASE
 
+
+def generate_task_icon_modifier_rst():
+    """Generate reStructuredText for task icon modifier shortcuts
+    of assorted sizes.
+
+    Makes available `|task-<modifier>-<size>|` where
+      * sizes are
+        * "large"
+        * "super" (superscript)
+        * empty (default size)
+      * Modifiers are defined by files in /img/task-job-icons/task-is*.png.
+    """
+    rst = []
+    for modifier in Path('img/task-job-icons').glob('task-is*.png'):
+        modifier_name = modifier.stem.replace('task-is', '').lower()
+        for size, height in {'-large': 60, '': 18, '-super': 24}.items():
+            rst.append(
+                f".. |task-{modifier_name}{size}| image:: /{str(modifier)}\n"
+                f"   :height: {height}px\n"
+                f"   :align: middle\n"
+                f"   :alt: {modifier_name} icon"
+            )
+    return '\n\n'.join(rst)
+
+
 # -- General configuration ------------------------------------------------
 
 # Sphinx extension module names.
 sys.path.append(os.path.abspath('ext'))  # path to custom extensions.
 extensions = [
     # sphinx built-in extensions
+    'sphinx_copybutton',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.graphviz',
@@ -51,7 +77,6 @@ extensions = [
     'cylc.sphinx_ext.cylc_lang',
     'cylc.sphinx_ext.diff_selection',
     'cylc.sphinx_ext.grid_table',
-    'cylc.sphinx_ext.hieroglyph_addons',
     'cylc.sphinx_ext.minicylc',
     'cylc.sphinx_ext.practical',
     'cylc.sphinx_ext.rtd_theme_addons',
@@ -63,7 +88,8 @@ extensions = [
 rst_prolog = f"""
 .. |reserved_filenames| replace:: ``{'``, ``'.join(WorkflowFiles.RESERVED_NAMES)}``
 """
-rst_epilog = open('hyperlinks.rst.include', 'r').read()
+
+rst_epilog = open('hyperlinks.rst.include', 'r').read() + generate_task_icon_modifier_rst()
 
 default_role = 'cylc:conf'
 
@@ -96,7 +122,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Cylc'
-__copyright_year = 2025  # NOTE: this is automatically set by GH Actions
+__copyright_year = 2026  # NOTE: this is automatically set by GH Actions
 copyright = (
     f'2008-{__copyright_year} NIWA & British Crown (Met Office) & Contributors'
 )
@@ -149,6 +175,12 @@ nitpick_ignore_regex = [
     ('py:class', r'zmq\.asyncio\.\w+')
 ]
 
+suppress_warnings = [
+    # Workaround https://github.com/sphinx-doc/sphinx/issues/12589
+    # and https://github.com/sphinx-doc/sphinx/issues/12660:
+    'autosummary.import_cycle',
+]
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = ['user-guide/examples/**README.rst']
@@ -167,6 +199,10 @@ linkcheck_ignore = [
     # linkcheck has trouble handling GH anchors
     'https?://github.com/.*#.*',
     'https?://matrix.to/.*#.*',
+    # Blocked by bot protection:
+    'https?://www.iso.org',
+    # Frequently rate-limited:
+    'https?://upload.wikimedia.org/wikipedia/commons/.*',
 ]
 
 # -- Options for Slides output ----------------------------------------------
@@ -182,7 +218,8 @@ slide_theme_options = {'custom_css': 'css/slides-custom.css'}
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'logo_only': True,
-    'navigation_depth': 4
+    'navigation_depth': 4,
+    'vcs_pageview_mode': 'edit',
 }
 html_logo = "img/cylc-logo-white.svg"
 html_favicon = "img/cylc-favicon.ico"  # sphinx specifies .ico format
@@ -203,13 +240,12 @@ html_sidebars = {
 # sphinx-build opt `-A name=value` (add to SPHINXOPTS if using make).
 html_context = {
     'sidebar_version_name': None,  # override name in version picker
+    'display_github': True,
+    'github_user': 'cylc',
+    'github_repo': 'cylc-doc',
+    'github_version': 'master',
+    'conf_py_path': '/src/',
 }
-
-html_static_path = ['_static']
-
-# These paths are either relative to html_static_path
-# or fully qualified paths (eg. https://...)
-html_css_files = ['css/custom.css']
 
 # Disable timestamp otherwise inserted at bottom of every page.
 html_last_updated_fmt = ''
@@ -217,6 +253,23 @@ html_last_updated_fmt = ''
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'cylcdoc'
 
+# -- Static file locations -----------------------------------------------
+html_static_path = ['_static']
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+# NOTE: these are added to the end of the default/theme static files, so
+# will override them if there are any conflicts.
+
+# Custom CSS
+html_css_files = [
+    'css/custom.css',
+]
+
+# Custom JS
+html_js_files = [
+    'js/extern_links_new_tab.js',
+]
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -300,3 +353,6 @@ wordsfile.write_text('\n'.join(words) + '\n')
 # Create sentence case versions of wordlist:
 sentence_case = [word.capitalize() for word in words]
 sentence_case_file.write_text('\n'.join(sentence_case) + '\n')
+
+# Turn off copybutton for diffs
+copybutton_selector = "div:not(.highlight-diff) > div.highlight > pre"

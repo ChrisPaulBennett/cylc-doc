@@ -51,7 +51,7 @@ Glossary
       state>` once the final try fails.
 
       The task try number increments with every automatic retry, and is
-      passed to the job environment as ``$CYLC_TASK_TRY_NUMBER``.
+      passed to the job environment as :envvar:`CYLC_TASK_TRY_NUMBER`.
 
       .. seealso::
 
@@ -63,55 +63,51 @@ Glossary
    task submit number
       Every time a task re-runs, whether by automatic :term:`retry` or manual
       triggering, its submit number increments. It is passed to
-      the job environment as ``$CYLC_TASK_SUBMIT_NUMBER``.
+      the job environment as :envvar:`CYLC_TASK_SUBMIT_NUMBER`.
 
       Submit number also appears in the job log path so that job log files
       don't get overwritten.
 
-
-   active
    active task
-      An active task is a task which is near ready to run, in the process of
-      running, or which requires user intervention. These are all the tasks
-      being actively managed by the scheduler at this point in the run. 
+   active window
+      Active tasks are those tasks held in memory to feed
+      the scheduling algorithm. They form the ``n=0`` or *active*
+      :term:`window<n-window>`, so are always visible in the GUI.
 
-      Active tasks are:
+      Active tasks include:
 
-      - Tasks which have some, but not all of their
-        :term:`prerequisites <prerequisite>` satisfied.
-      - ``waiting`` tasks, that are actively waiting on:
+      - ``submitted`` and ``running`` tasks (i.e, tasks with active jobs)
+      - ``preparing`` tasks in the job submission pipeline
+      - ``waiting`` tasks that are nearly ready to run but:
 
-        - :term:`xtriggers <xtrigger>`.
-        - :ref:`internal queues <InternalQueues>`
-        - :ref:`runahead limit <RunaheadLimit>`
+        - have partially satisfied :term:`prerequisites <prerequisite>`
+        - or are waiting on :term:`xtriggers <xtrigger>`,
+          :ref:`internal queues <InternalQueues>`, or the :ref:`runahead limit <RunaheadLimit>`
 
-      - ``preparing`` tasks - i.e. tasks in the process of submitting jobs
-      - ``submitted`` and ``running`` tasks - i.e. those with active jobs
       - tasks that reached a :term:`final status` without completing their
         :term:`required outputs <required output>`
         (e.g. a task failed where success was required).
 
-      Active tasks are in the ``n=0`` :term:`window <n-window>` which means they
-      will always be displayed in the GUI and Tui.
+      .. seealso::
 
-      The distinction between active and non-active tasks is important for
-      the computing of the :term:`runahead limit`.
+         * :ref:`n-window`
+
+
+   n-window
+      The GUI provides a view of the workflow extending ``n`` graph edges out
+      from :term:`active tasks <active task>` - which form the ``n=0``
+      window. The default n-window extent is ``n=1``.
+
+      .. seealso::
+
+         * :ref:`n-window`
 
 
    active cycle
-      A cycle point is active if it contains any :term:`active tasks <active task>`.
-
-      Active cycles are counted towards the :term:`runahead limit`.
-
-
-   window
-   n-window
-   active window
-      The GUI provides a :term:`graph`-based window or view of the workflow at
-      runtime, including tasks out to ``n`` graph edges from current
+      A cycle point is considered to be active if it contains any
       :term:`active tasks <active task>`.
 
-      Active tasks form the ``n=0`` window.
+      Active cycles count toward the :term:`runahead limit`.
 
       .. seealso::
 
@@ -172,8 +168,8 @@ Glossary
       The workflow name is a path relative to the cylc-run directory which
       contains one or more workflow :term:`run directories <run directory>`.
 
-      Tasks can get the workflow name from ``$CYLC_WORKFLOW_NAME`` in their
-      runtime environment.
+      Tasks can get the workflow name from :envvar:`CYLC_WORKFLOW_NAME` in
+      their runtime environment.
 
       Unlike :term:`workflow id` the name is not always a unique identifier. In
       the example below ``run1`` and ``run2`` would both have the same name,
@@ -190,6 +186,12 @@ Glossary
          If you are not using named or numbered runs, the workflow name will be
          the same as :term:`workflow id`.
 
+   wrapper script
+      A simple shell script which redirects a command to an environment or
+      executable.
+
+      See :ref:`installation.what-are-wrapper-scripts` and
+      :ref:`installation.setting-up-the-cylc-wrapper-script`.
 
    external trigger
    xtrigger
@@ -358,7 +360,6 @@ Glossary
          "1/bar" -> "2/bar" -> "3/bar"
 
 
-
       .. seealso::
 
          * :ref:`tutorial-integer-cycling`
@@ -376,11 +377,14 @@ Glossary
 
 
    cycle point
-      The unique label given to tasks that belong to a particular :term:`cycle`.
+      The label given to tasks that belong to a particular :term:`cycle`.
       For :term:`integer cycling` these will be integers, e.g. ``1``, ``2``,
       ``3``, etc.
       For :term:`datetime cycling` they will be :term:`ISO 8601` datetimes,
       e.g. ``2000-01-01T00:00Z``.
+
+      Cylc can run multiple cycles at once, dependencies allowing, so each
+      task instance has its own cycle point label.
 
       .. seealso::
 
@@ -753,8 +757,8 @@ Glossary
          <run-directory>/work/<cycle-point>/<task-name>
 
       Tasks can get their own work directory path at runtime from
-      the ``CYLC_TASK_WORK_DIR`` environment variable or the Posix ``pwd``
-      command.
+      the :envvar:`CYLC_TASK_WORK_DIR` environment variable or the Posix
+      ``pwd`` command.
 
       .. seealso::
 
@@ -772,7 +776,7 @@ Glossary
          <run-directory>/share
 
       Tasks can get their own share directory path at runtime from
-      the ``CYLC_WORKFLOW_SHARE_DIR`` environment variable.
+      the :envvar:`CYLC_WORKFLOW_SHARE_DIR` environment variable.
 
       In cycling workflows files are typically stored in cycle point
       sub-directories of the share directory.
@@ -993,7 +997,8 @@ Glossary
       This refers to starting a new instance of the Cylc :term:`scheduler`
       program to manage a particular :term:`workflow`. This can be from
       scratch, for installed workflows that haven't run previously, or to
-      restart one that shut down prior to :term:`completion <workflow completion>`.
+      restart one that shut down prior to
+      :ref:`completion <workflow completion>`.
 
       .. seealso::
 
@@ -1031,7 +1036,8 @@ Glossary
       the :term:`initial cycle point`.
 
       To satisfy unbounded :term:`intercycle dependence` in the graph, tasks
-      prior to the start cycle point are treated as if they have succeeded.
+      prior to the start cycle point are treated as if they have succeeded
+      (in :term:`flow` 1).
 
       .. seealso::
 
@@ -1132,7 +1138,7 @@ Glossary
       :term:`installed <install>` configuration used to run a :term:`workflow`.
 
       At runtime, task :term:`jobs <job>` can get their workflow run
-      directory from the environment variable ``CYLC_WORKFLOW_RUN_DIR``.
+      directory from the environment variable :envvar:`CYLC_WORKFLOW_RUN_DIR`.
 
       .. seealso::
 
@@ -1170,7 +1176,7 @@ Glossary
    stop
    shutdown
       A :term:`scheduler` can shut down on request, or automatically on
-      :term:`workflow completion`. The :term:`workflow` is then stopped and no
+      :ref:`workflow completion`. The :term:`workflow` is then stopped and no
       further :term:`jobs <job>` will be submitted.
 
       By default, the scheduler waits for any submitted or running task
@@ -1216,9 +1222,10 @@ Glossary
       workflow :term:`source directory` before reload, rather than made by
       editing the installed files directly.
 
-      :ref:`RemoteInit` will be redone for each job platform, when the first job is submitted there after a reload.
+      :ref:`RemoteInit` will be redone for each job platform, when the first
+      job is submitted there after a reload.
 
-      Any :term:`task` that is :term:`active <active task>` at reload
+      Any task that is :term:`active <active task>` at reload
       will continue with its pre-reload configuration.
       The next instance of the task (at the next cycle point)
       will adopt the new configuration.
@@ -1383,7 +1390,7 @@ Glossary
      Every :term:`task` has a set of standard :term:`outputs <task output>`
      that trigger :term:`task state` changes:
 
-      - ``:expired```
+      - ``:expired``
       - ``:submitted``, or ``:submit-failed``
       - ``:started``
       - ``:succeeded``, or ``:failed``
@@ -1418,7 +1425,7 @@ Glossary
 
    output completion
    output completion condition
-      A task's outputs are *complete* if its *output completion condition* 
+      A task's outputs are *complete* if its *output completion condition*
       is satisfied.
 
       The completion condition can be defined by the user in
@@ -1433,7 +1440,7 @@ Glossary
       - Or, if expiry is optional, then the outputs are complete if it expires.
 
       Tasks that achieve a :term:`final status` with complete outputs have done
-      their job, allowing the workflow to move on.
+      their job in the workflow, allowing the scheduler to move on.
 
       Tasks that achieve a final status with incomplete outputs are retained in
       :term:`n=0 <n-window>` pending user intervention, and will :term:`stall`
@@ -1494,7 +1501,7 @@ Glossary
       are known as :term:`message triggers <message trigger>`.
 
       The term "trigger" also refers the action of manually triggering
-      a task to run, via the ``cylc trigger`` command or the GUI. 
+      a task to run, via the ``cylc trigger`` command or the GUI.
 
 
    message trigger
@@ -1587,8 +1594,8 @@ Glossary
 
    stall
    stalled workflow
-      A stalled workflow has not run to :term:`completion <workflow completion>`
-      but cannot continue without manual intervention. 
+      A stalled workflow has not :ref:`run to completion <workflow completion>`
+      but cannot continue without manual intervention.
 
       A stalled scheduler stays alive for a configurable timeout period
       pending manual intervention. If it shuts down (on the stall timeout
@@ -1611,10 +1618,13 @@ Glossary
       User intervention is required to fix a stall, e.g. by retriggering
       tasks after fixing the problems that caused them to fail.
 
+      .. seealso:
+
+         * :ref:`Cylc User Guide <scheduler stall>`
+
 
    suicide trigger
-      Suicide triggers remove :term:`tasks <task>` from the 
-      :term:`active window <n-window>` at runtime.
+      Suicide triggers remove tasks from the :term:`n=0 window <n-window>`.
 
       They are denoted by exclamation marks, and are triggered like normal
       dependencies. For instance, the following suicide trigger will remove the
@@ -1693,25 +1703,33 @@ Glossary
       .. seealso::
          * :ref:`user-guide-reflow`
 
+   child
+   parent
+   parentless
+      The upstream and downstream tasks in a dependency pair may be referred
+      to, respectively, as parent and child tasks. Tasks that have parents are
+      spawned into the :term:`active window` of the workflow as soon as the
+      first of their task prerequisites is satisfied by a parent. Parentless
+      tasks don't have any task prerequisites, so they get spawned automatically
+      out to the :term:`runahead limit`.
+
 
    flow number
       Flow numbers are integers passed down from parent task to child task in
       the :term:`graph` as a flow progresses, to identify which :term:`flow`
       (or flows) the tasks belong to. They are passed to job environments as
-      ``$CYLC_TASK_FLOW_NUMBERS``.
+      :envvar:`CYLC_TASK_FLOW_NUMBERS`.
 
 
    flow front
-      :term:`Active tasks <active task>`, i.e. tasks in the
-      :term:`n=0 window <n-window>`, with a common :term:`flow number`
+      :term:`Active tasks <active task>` with a common :term:`flow number`
       comprise the active front of the flow.
 
 
    flow merge
-      When a :term:`flow` tries to spawn a child task and finds an instance
-      with the same task ID already exists in the ``n=0`` :term:`active
-      window`, one merged task will carry both flow numbers forward.
-
+      If a spawned task encounters another :term:`active task` with the same
+      task ID, the two instances will merge and carry both :term:`flow`
+      numbers forward.
 
    event
       An event is a milestone in the lifecycle of a :term:`workflow` or
@@ -1747,12 +1765,9 @@ Glossary
 
    runahead limit
    runahead
-      In a :term:`cycling workflow`, the runahead limit determines how far
-      ahead of the oldest :term:`active cycle` the workflow is permitted
-      to run.
-
-      The "oldest active cycle point" is the first cycle in the workflow to contain
-      any :term:`active tasks <active task>` (e.g. running tasks).
+      In a :term:`cycling workflow` the runahead limit determines how
+      far ahead, in :term:`cycle points <cycle point>`, activity can
+      extend beyond the earliest submitted or running tasks.
 
       .. seealso::
 
@@ -1760,21 +1775,9 @@ Glossary
          * :ref:`Runahead Limiting`
          * :term:`active cycle`
 
-
-   workflow completion
-      A workflow is complete, and the scheduler will automatically
-      :term:`shut down <shutdown>`, if no tasks remain in the
-      :term:`n=0 <n-window>`.
-
-      That is, all active tasks have finished, and no tasks remain waiting on
-      :term:`prerequisites <prerequisite>` or "external" constraints (such as
-      :term:`xtriggers <xtrigger>` or task :term:`hold`).
-
-      If no active tasks remain and all external constraints are satisfied,
-      but the n=0 window contains tasks waiting with partially satisfied
-      :term:`prerequisites <prerequisite>`, or tasks with :term:`final status` and
-      :term:`incomplete outputs <output completion>`, then the workflow is
-      not complete and the scheduler will :term:`stall` pending manual intervention.
+   skip mode
+      A task run mode that skips execution but completes outputs as if the task had run.
+      See :ref:`task-run-modes.skip`.
 
    dummy task
       A task which runs a trivially simple script such as ``sleep 1``,
